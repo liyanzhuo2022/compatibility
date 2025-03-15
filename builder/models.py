@@ -25,12 +25,6 @@ class SubGroup(models.Model):
     def __str__(self):
         return self.subGroupName
 
-# ComponentType model
-class ComponentType(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
 
 # Product model has foreign keys to Brand, MainGroup, SubGroup and ComponentType
 class Product(models.Model):
@@ -39,7 +33,6 @@ class Product(models.Model):
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
     mainGroup = models.ForeignKey(MainGroup, on_delete=models.CASCADE)
     subGroup = models.ForeignKey(SubGroup, on_delete=models.CASCADE)
-    componentType = models.ForeignKey(ComponentType, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.productName
@@ -74,8 +67,8 @@ class ProductSpec(models.Model):
 
 # CompatibilityRule model has foreign keys to ComponentType
 class CompatibilityRule(models.Model):
-    componentType1 = models.ForeignKey(ComponentType, related_name='source_rules', on_delete=models.CASCADE)
-    componentType2 = models.ForeignKey(ComponentType, related_name='target_rules', on_delete=models.CASCADE)
+    componentType1 = models.ForeignKey(MainGroup, related_name='source_rules', on_delete=models.CASCADE)
+    componentType2 = models.ForeignKey(MainGroup, related_name='target_rules', on_delete=models.CASCADE)
     relationType = models.CharField(max_length=100)
     value = models.CharField(max_length=100)
 
