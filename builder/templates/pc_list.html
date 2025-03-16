@@ -19,6 +19,10 @@
 <div id="operation-message" class="alert alert-info text-center d-none mt-4" role="alert">
     <!-- 动态插入提示 -->
 </div>
+
+<!-- ✅ 预留：最终 PC List 纯文本展示区 -->
+<div id="final-pc-list" class="mt-4"></div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -27,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const pcListDiv = document.getElementById('pc-list');
     const operationMessage = document.getElementById('operation-message');
     const finalizeBtn = document.getElementById('finalize-btn');
+    const finalPCListDiv = document.getElementById('final-pc-list');
 
     // 加载 PC List
     function loadPCList() {
@@ -35,8 +40,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 const pcList = data.pc_list;
 
-                // 清空
+                // 清空旧内容
                 pcListDiv.innerHTML = '';
+                finalPCListDiv.innerHTML = '';  // 清空最终列表
 
                 if (pcList.length === 0) {
                     pcListDiv.innerHTML = '<p class="text-center">Your PC List is empty.</p>';
@@ -44,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // 显示产品卡片
+                // 渲染产品卡片
                 pcList.forEach(product => {
                     const card = `
                         <div class="card m-2" style="width: 18rem;">
@@ -59,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pcListDiv.innerHTML += card;
                 });
 
-                finalizeBtn.disabled = false;  // 如果有产品，启用保存按钮
+                finalizeBtn.disabled = false;  // 启用保存按钮
             });
     }
 
@@ -76,59 +82,41 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             showMessage(data.message, data.success);
-            loadPCList();  // 刷新列表
+            loadPCList();  // 刷新
         });
     }
 
     // 保存 PC List
     finalizeBtn.addEventListener('click', function() {
-    fetch('/api/pc-list/save/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        showMessage(data.message, data.success);
-        if (data.success) {
-            console.log('Finalized list:', data.pc_list);
-
-            // 构建纯文本列表
-            let plainList = '✅ Your PC List:\n\n';
-            data.pc_list.forEach(product => {
-                plainList += `- [${product.mainGroup}] ${product.productName} (Brand: ${product.brand}, SKU: ${product.sku})\n`;
-            });
-
-            // 创建显示区域
-            const plainListDiv = document.createElement('div');
-            plainListDiv.classList.add('alert', 'alert-secondary', 'mt-4');
-            plainListDiv.innerHTML = `<pre>${plainList}</pre>`;
-
-            // 删除旧的展示结果（如果之前已有）
-            const oldResult = document.getElementById('final-pc-list');
-            if (oldResult) {
-                oldResult.remove();
+        fetch('/api/pc-list/save/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
             }
-            // 添加新结果
-            plainListDiv.id = 'final-pc-list';  // 设置 ID 方便后续替换
-            document.body.appendChild(plainListDiv);
-        }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showMessage(data.message, data.success);
+
+            if (data.success) {
+                let plainList = '✅ Your PC List:\n\n';
+                data.pc_list.forEach(product => {
+                    plainList += `- [${product.mainGroup}] ${product.productName} (Brand: ${product.brand}, SKU: ${product.sku})\n`;
+                });
+
+                // 渲染最终列表
+                finalPCListDiv.innerHTML = `<div class="alert alert-secondary"><pre>${plainList}</pre></div>`;
+            }
+        });
     });
-});
 
     // 显示消息
     function showMessage(message, success) {
         operationMessage.textContent = message;
         operationMessage.classList.remove('d-none');
-        if (success) {
-            operationMessage.classList.add('alert-success');
-            operationMessage.classList.remove('alert-danger');
-        } else {
-            operationMessage.classList.add('alert-danger');
-            operationMessage.classList.remove('alert-success');
-        }
+        operationMessage.classList.toggle('alert-success', success);
+        operationMessage.classList.toggle('alert-danger', !success);
         setTimeout(() => operationMessage.classList.add('d-none'), 3000);
     }
 
