@@ -65,12 +65,13 @@ class ProductSpec(models.Model):
         return f"{self.product} - {self.spec}: {self.value}"
 
 
-# CompatibilityRule model has foreign keys to ComponentType
+# CompatibilityRule model has foreign keys to MainGroup(ComponentType)
+# CompatibilityRule 存储组件类型之间的“约定标准”，而实际字段和数据的检查逻辑，由 utils.py 里专门针对 relationType 实现。
 class CompatibilityRule(models.Model):
     componentType1 = models.ForeignKey(MainGroup, related_name='source_rules', on_delete=models.CASCADE)
     componentType2 = models.ForeignKey(MainGroup, related_name='target_rules', on_delete=models.CASCADE)
-    relationType = models.CharField(max_length=100)
-    value = models.CharField(max_length=100)
+    relationType = models.CharField(max_length=100) # socket, etc.
+    value = models.CharField(max_length=100) # explaination of the relationType
 
     def __str__(self):
         return f"{self.componentType1} -> {self.componentType2}: {self.relationType}={self.value}"
