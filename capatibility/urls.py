@@ -21,4 +21,5 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/', include('builder.urls')), 
+    path('', include('builder.page_urls')),  # 专门给页面
 ]

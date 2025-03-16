@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}My PC List - Megekko{% endblock %}
+
+{% block content %}
+<h1 class="text-center my-4">My PC List</h1>
+
+<!-- 产品列表区域 -->
+<div id="pc-list" class="row justify-content-center">
+    <!-- 动态加载 -->
+</div>
+
+<!-- 保存按钮 -->
+<div class="text-center mt-4">
+    <button id="finalize-btn" class="btn btn-primary">Finalize PC Build</button>
+</div>
+
+<!-- 操作反馈 -->
+<div id="operation-message" class="alert alert-info text-center d-none mt-4" role="alert">
+    <!-- 动态插入提示 -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pcListDiv = document.getElementById('pc-list');
+    const operationMessage = document.getElementById('operation-message');
+    const finalizeBtn = document.getElementById('finalize-btn');
+
+    // 加载 PC List
+    function loadPCList() {
+        fetch('/api/pc-list/')
+            .then(response => response.json())
+            .then(data => {
+                const pcList = data.pc_list;
+
+                // 清空
+                pcListDiv.innerHTML = '';
+
+                if (pcList.length === 0) {
+                    pcListDiv.innerHTML = '<p class="text-center">Your PC List is empty.</p>';
+                    finalizeBtn.disabled = true;
+                    return;
+                }
+
+                // 显示产品卡片
+                pcList.forEach(product => {
+                    const card = `
+                        <div class="card m-2" style="width: 18rem;">
+                            <div class="card-body">
+                                <h5 class="card-title">${product.productName}</h5>
+                                <p class="card-text">Brand: ${product.brand}</p>
+                                <p class="card-text">Category: ${product.mainGroup}</p>
+                                <button class="btn btn-danger btn-sm" onclick="removeFromPCList('${product.sku}')">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    pcListDiv.innerHTML += card;
+                });
+
+                finalizeBtn.disabled = false;  // 如果有产品，启用保存按钮
+            });
+    }
+
+    // 删除产品
+    window.removeFromPCList = function(sku) {
+        fetch('/api/pc-list/remove/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ sku: sku })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showMessage(data.message, data.success);
+            loadPCList();  // 刷新列表
+        });
+    }
+
+    // 保存 PC List
+    finalizeBtn.addEventListener('click', function() {
+        fetch('/api/pc-list/save/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showMessage(data.message, data.success);
+            if (data.success) {
+                console.log('Finalized list:', data.pc_list);
+                // 你也可以把 data.pc_list 渲染出来给用户 copy
+            }
+        });
+    });
+
+    // 显示消息
+    function showMessage(message, success) {
+        operationMessage.textContent = message;
+        operationMessage.classList.remove('d-none');
+        if (success) {
+            operationMessage.classList.add('alert-success');
+            operationMessage.classList.remove('alert-danger');
+        } else {
+            operationMessage.classList.add('alert-danger');
+            operationMessage.classList.remove('alert-success');
+        }
+        setTimeout(() => operationMessage.classList.add('d-none'), 3000);
+    }
+
+    // 获取 CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // 初始加载
+    loadPCList();
+});
+</script>
+{% endblock %}

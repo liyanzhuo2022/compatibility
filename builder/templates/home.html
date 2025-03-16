@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Start Building - Megekko{% endblock %}
+
+{% block content %}
+<h1 class="text-center my-4">Start Building Your Dream PC</h1>
+
+<!-- 类别展示区 -->
+<div id="component-types-list" class="row justify-content-center">
+    <!-- JS 动态插入 -->
+</div>
+
+<!-- 错误提示 -->
+<div id="error-message" class="alert alert-danger text-center d-none" role="alert">
+    Failed to load component categories. Please try again later.
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 访问 /api/component-types/ 拿所有类别
+    fetch('/api/component-types/')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const container = document.getElementById('component-types-list');
+            container.innerHTML = '';  // 清空占位符
+            console.log('Loaded component types:', data);  // ✅ 控制台日志，方便调试
+
+            // 遍历数组，动态生成类别卡片
+            data.forEach(item => {
+                const card = `
+                    <div class="card m-2" style="width: 12rem;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">${item.name}</h5>
+                            <a href="/components/?type=${encodeURIComponent(item.name)}" class="btn btn-primary">View Products</a>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        })
+        .catch(error => {
+            console.error('Error loading component types:', error);
+            document.getElementById('error-message').classList.remove('d-none');  // 显示错误提示
+        });
+});
+</script>
+{% endblock %}

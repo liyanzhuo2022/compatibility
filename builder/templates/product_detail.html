@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Product Detail - Megekko{% endblock %}
+
+{% block content %}
+<h1 class="text-center my-4" id="product-title">Product Details</h1>
+
+<!-- 规格表 -->
+<table class="table table-striped" id="specs-table">
+    <thead>
+        <tr>
+            <th>Specification</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- JS 动态生成 -->
+    </tbody>
+</table>
+
+<!-- 返回按钮 -->
+<div class="text-center">
+    <a id="back-button" class="btn btn-secondary">Back to List</a>
+</div>
+
+<!-- 错误提示 -->
+<div id="error-message" class="alert alert-danger text-center d-none mt-4" role="alert">
+    Failed to load product specs. Please try again later.
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sku = urlParams.get('sku');  // 获取 ?sku=123
+    const specsTableBody = document.querySelector('#specs-table tbody');
+    const errorMessage = document.getElementById('error-message');
+    const productTitle = document.getElementById('product-title');
+    const backButton = document.getElementById('back-button');
+
+    // 设置返回按钮链接（回退上一页面）
+    backButton.href = document.referrer || '/components/';
+
+    if (!sku) {
+        errorMessage.classList.remove('d-none');
+        errorMessage.textContent = "Invalid product SKU.";
+        return;
+    }
+
+    // 加载产品规格
+    fetch(`/api/product/${sku}/specs/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const specs = data.specs;
+            console.log('Loaded specs:', specs);  // ✅ 控制台查看
+
+            // 设置标题
+            productTitle.textContent = `Product Details (SKU: ${sku})`;
+
+            // 填充表格
+            for (const [spec, value] of Object.entries(specs)) {
+                const row = `
+                    <tr>
+                        <td>${spec}</td>
+                        <td>${value}</td>
+                    </tr>
+                `;
+                specsTableBody.innerHTML += row;
+            }
+
+            // 如果没有 specs
+            if (Object.keys(specs).length === 0) {
+                specsTableBody.innerHTML = '<tr><td colspan="2" class="text-center">No specifications available.</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading specs:', error);
+            errorMessage.classList.remove('d-none');
+        });
+});
+</script>
+{% endblock %}
