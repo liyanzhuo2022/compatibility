@@ -82,22 +82,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 保存 PC List
     finalizeBtn.addEventListener('click', function() {
-        fetch('/api/pc-list/save/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+    fetch('/api/pc-list/save/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        showMessage(data.message, data.success);
+        if (data.success) {
+            console.log('Finalized list:', data.pc_list);
+
+            // 构建纯文本列表
+            let plainList = '✅ Your PC List:\n\n';
+            data.pc_list.forEach(product => {
+                plainList += `- [${product.mainGroup}] ${product.productName} (Brand: ${product.brand}, SKU: ${product.sku})\n`;
+            });
+
+            // 创建显示区域
+            const plainListDiv = document.createElement('div');
+            plainListDiv.classList.add('alert', 'alert-secondary', 'mt-4');
+            plainListDiv.innerHTML = `<pre>${plainList}</pre>`;
+
+            // 删除旧的展示结果（如果之前已有）
+            const oldResult = document.getElementById('final-pc-list');
+            if (oldResult) {
+                oldResult.remove();
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            showMessage(data.message, data.success);
-            if (data.success) {
-                console.log('Finalized list:', data.pc_list);
-                // 你也可以把 data.pc_list 渲染出来给用户 copy
-            }
-        });
+            // 添加新结果
+            plainListDiv.id = 'final-pc-list';  // 设置 ID 方便后续替换
+            document.body.appendChild(plainListDiv);
+        }
     });
+});
 
     // 显示消息
     function showMessage(message, success) {
