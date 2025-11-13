@@ -43,16 +43,19 @@ Developed during Enigma x Megekko Hackathon in Tilburg University as a team proj
 pip install -r requirements.txt
 ```
 
-1. **Run migrations**
+2. **Run migrations**
 
 ```bash
 python manage.py migrate
 ```
 
-1. **Start development server**
+3. **Start development server**
 
 ```bash
 python manage.py runserver
 ```
 
-1. **Open the app**
+4. **Open the app**
+```bash
+http://localhost:8000/
+```
